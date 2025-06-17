@@ -36,6 +36,44 @@ riv <- rivers %>%
 
 ```
 
+Calculate EOO using convex hulls in sf
+
+```{r}
+# Initialize a list to store results
+options(scipen = 999)
+eoo_list <- list()
+
+riv_eoo <- rivers %>%
+  mutate(leng = as.numeric(st_length(geometry))) %>%
+  rename(PES2024 = NBA2025_PE) %>% # fix name of PES 2024
+  # clean up non SA type and remove estuaries and foreign segments
+  filter(RIVTYPE != "Foreign", PES2018 != "Foreign", PES2024 != "Foreign",
+                     PES2018 != "Estuary",  PES2018 != "Estuary") %>%   
+  # ensure consistency with Data defic segments  
+  mutate(PES2018 = ifelse(PES2018 == "Data defic" & PES2024 != "Data defic", PES2024                          , PES2018))
+
+# Iterate through unique T_MAPCODE values 
+for (rivcode in unique(riv_eoo$RIVTYPE)) {
+  subset_data <- riv_eoo %>% filter(RIVTYPE == rivcode)
+  if (nrow(subset_data) > 0) {
+    convex_hull <- st_convex_hull(st_union(subset_data))
+    hull_area <- st_area(convex_hull)
+    eoo_list[[rivcode]] <- as.numeric(hull_area)
+  }
+}
+
+eoo_df <- data.frame(
+  RIVTYPE = names(eoo_list),
+  AREA_EOO = unlist(eoo_list)
+) %>%
+  mutate(eoo_km2 = AREA_EOO/1000000) %>%
+  select(!AREA_EOO)
+
+write.csv(eoo_df, "outputs/EOO_all.csv")
+
+
+```
+
 ```{r}
 
 #summarise by River type including segment length per type per condition class - this allows for inclusion of condition in the EPL formula
@@ -62,8 +100,9 @@ riv_type_24 <- riv %>%
  
  riv_type_metrics <- riv_type_18 %>%
    rename(A18=A, B18=B, C18=C, D18=D, E18=E, F18=F, DDef18 = `Data defic`) %>%
-   left_join(riv_type_24, by = "RIVTYPE") %>%
+  left_join(riv_type_24, by = "RIVTYPE") %>%
     rename(DDef = `Data defic`) %>%
+  left_join(eoo_df, by = "RIVTYPE") %>%
     mutate(prp18_cdef = (C18 + D18 + E18 + F18)/tot_leng18) %>%
     mutate(prp18_def = (D18 + E18 + F18 )/tot_leng18) %>%
     mutate(prp18_ef= (E18 + F18)/tot_leng18) %>%
@@ -78,10 +117,26 @@ riv_type_24 <- riv %>%
                                                   prp18_cdef >= 0.9 ~ "VU", 
                                  TRUE ~ "LC")) %>% 
     mutate(D3_24 = case_when( prp24_ef >= 0.9 ~ "CR", 
-                                 prp24_ef >= 0.7 | prp24_def >=0.9 ~ "EN",
+                                 prp24_def >= 0.3 | prp24_def >=0.9 ~ "EN",
                                  prp24_ef >= 0.5 | prp24_def >=0.7 | 
                                                   prp24_cdef >= 0.9 ~ "VU", 
                                  TRUE ~ "LC")) %>%
+   mutate(B1_18 = case_when( prp18_def >= 0.3 & eoo_km2  <= 2000 ~ "CR",
+                             prp18_def >= 0.3 & eoo_km2  <= 20000 ~ "EN",
+                              prp18_def >= 0.3 & eoo_km2  <= 50000 ~ "VU",
+                                 TRUE ~ "LC")) %>%
+   mutate(B1_24 = case_when( prp24_def >= 0.3 & eoo_km2  <= 2000 ~ "CR",
+                             prp24_def >= 0.3 & eoo_km2  <= 20000 ~ "EN",
+                              prp24_def >= 0.3 & eoo_km2  <= 50000 ~ "VU",
+                                 TRUE ~ "LC")) %>%
+   mutate(RLE_18 = case_when(B1_18 == "CR" | D3_18 == "CR" ~ "CR", 
+                             B1_18 == "EN" | D3_18 == "EN" ~ "EN",
+                             B1_18 == "VU" | D3_18 == "VU" ~ "VU",
+                              TRUE ~ "LC")) %>%
+   mutate(RLE_24 = case_when(B1_24 == "CR" | D3_24 == "CR" ~ "CR", 
+                             B1_24 == "EN" | D3_24 == "EN" ~ "EN",
+                             B1_24 == "VU" | D3_24 == "VU" ~ "VU",
+                              TRUE ~ "LC")) %>%
    # add in van Deventer 2018 method: SA approach assuming A and B are intact rest is lost but also counting C towards  VU)
    mutate(A3h_24 = case_when( prp24_cdef >= 0.8 ~ "CR", 
                               prp24_cdef >= 0.65 ~ "EN",
@@ -109,9 +164,9 @@ Summarise
 # 2018 summaries
 # make summary counts of RLE categories per River Slopes Zones 
  rle18_sum <- riv_type_metrics %>%
-    group_by(D3_18, zone) %>%
+    group_by(RLE_18, zone) %>%
   summarise(count = n(),.groups = 'drop') %>%
-  pivot_wider(names_from = D3_18, 
+  pivot_wider(names_from = RLE_18, 
               values_from = count, values_fill = 0) %>%
    relocate(VU, .after = EN) %>%
    # Add row-wise TOTAL
@@ -130,9 +185,9 @@ Summarise
  
   # make summary of extent of RLE
  rle18_ext <- riv_type_metrics %>%
-    group_by(D3_18, zone) %>%
+    group_by(RLE_18, zone) %>%
   summarise(length = round(sum(tot_leng18)/1000, 0),.groups = 'drop') %>%
-  pivot_wider(names_from = D3_18, 
+  pivot_wider(names_from = RLE_18, 
               values_from = length, values_fill = 0) %>%
     relocate(VU, .after = EN) %>%
    # Add row-wise TOTAL
@@ -160,9 +215,9 @@ Summarise
   
    # make summary counts of RLE categories per River Slopes Zones 
  rle24_sum <- riv_type_metrics %>%
-    group_by(D3_24, zone) %>%
+    group_by(RLE_24, zone) %>%
   summarise(count = n(),.groups = 'drop') %>%
-  pivot_wider(names_from = D3_24, 
+  pivot_wider(names_from = RLE_24, 
               values_from = count, values_fill = 0) %>%
    relocate(VU, .after = EN) %>%
    # Add row-wise TOTAL
@@ -181,9 +236,9 @@ Summarise
  
   # make summary of extent of RLE
  rle24_ext <- riv_type_metrics %>%
-    group_by(D3_24, zone) %>%
+    group_by(RLE_24, zone) %>%
   summarise(length = round(sum(tot_leng24)/1000, 0),.groups = 'drop') %>%
-  pivot_wider(names_from = D3_24, 
+  pivot_wider(names_from = RLE_24, 
               values_from = length, values_fill = 0) %>%
     relocate(VU, .after = EN) %>%
    # Add row-wise TOTAL
