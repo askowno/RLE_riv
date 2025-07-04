@@ -241,7 +241,7 @@ rle18_sum <- riv_type_metrics %>%
    
 ```
 
-RLE for Rivers using Nel et al. 2011 method
+RLE for Rivers using van Deventer 2019 method
 
 ```{r}
 # A3 SA methods results 

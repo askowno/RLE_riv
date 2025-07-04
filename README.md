@@ -20,12 +20,12 @@ The IUCN RLE approach was also followed and Criterion D3 was applied to the Pres
 
 #### **Results:** 
 
-Overall per-ecosystem type Threat Status 2024 results using South African methods (Van Deventer et.al., 2019) and IUCN RLE methods [rle_riv_metrics_per_type.csv](outputs/rle_riv_metrics_per_type.csv)
+Overall per-ecosystem type Threat Status 2024 results for rivers using South African methods (Van Deventer et.al., 2019) and IUCN RLE methods [rle_riv_metrics_per_type.csv](outputs/rle_riv_metrics_per_type.csv)
 
-Summary table - count of river ecosystem types per slope zone per South African RLE category [rle24_sa_riv_count.csv](outputs/rle24_sa_riv_count.csv)
+Summary table - count of river ecosystem types per slope zone per South African Ecosystem Threat Status category [rle24sa_riv_count.csv](outputs/rle24sa_riv_count.csv)
 
 Summary table - count of river ecosystem types per slope zone per IUCN RLE category [rle24_riv_count.csv](outputs/rle24_riv_count.csv)
 
-| RLE 2024 - Rivers | TS 2024 - Rivers |
+| RLE 2024 - Rivers | ETS 2024 - Rivers |
 |----|----|
 | ![](outputs/rle24_riv_barplot_count.jpeg) | ![](outputs/rle24sa_riv_barplot_count.jpeg) |
