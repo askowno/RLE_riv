@@ -129,6 +129,7 @@ riv_type_24 <- riv %>%
                              prp24_def >= 0.3 & eoo_km2  <= 20000 ~ "EN",
                               prp24_def >= 0.3 & eoo_km2  <= 50000 ~ "VU",
                                  TRUE ~ "LC")) %>%
+   # ensure highest risk cateroy is assiged 
    mutate(RLE_18 = case_when(B1_18 == "CR" | D3_18 == "CR" ~ "CR", 
                              B1_18 == "EN" | D3_18 == "EN" ~ "EN",
                              B1_18 == "VU" | D3_18 == "VU" ~ "VU",
@@ -164,7 +165,9 @@ RLE for Rivers using IUCN RLE methods
 ```{r}
 # 2018 summaries IUCN RLE approach 
 # make summary counts of RLE categories per River Slopes Zones IUCN approach D3
- rle18_sum <- riv_type_metrics %>%
+riv_type_metrics <- read_csv("outputs/rle_riv_metrics_per_type.csv") 
+
+rle18_sum <- riv_type_metrics %>%
     group_by(RLE_18, zone) %>%
   summarise(count = n(),.groups = 'drop') %>%
   pivot_wider(names_from = RLE_18, 
@@ -352,7 +355,7 @@ rle18sa_sum <- riv_type_metrics %>%
 # load nbaR package : first run this in console devtools::install_github("SANBI-NBA/nbaR") 
 library(nbaR)
 
-# Use NBA package to make RLE 2024  plot  using  Nel 2011 methods
+# Use NBA package to make RLE 2024  plot  using  Van Deventer 2019 methods
 pd_rle24sa_count <- rle24sa_sum %>%
     rename(`Critically Endangered` = CR, 
            `Endangered` = EN, 
@@ -368,12 +371,37 @@ rle24sa_barplot_count <- nba_plot(pd_rle24sa_count,
                  LAB = "Percentage of ecosystem types",
                 SAVE = NULL)
 
-rle24sa_barplot_count
 
 #export the 2024 plot of counts 
 ggsave(
   filename = "outputs/rle24sa_riv_barplot_count.jpeg", # File name
   plot = rle24sa_barplot_count,                  # Plot object
+  device = "jpeg",                        # File format
+  width = 16, height = 12, units = "cm",   # Dimensions
+  dpi = 300                               # Resolution
+)
+
+# Use NBA package to make RLE 2024  plot  using  IUCN RLE v2
+pd_rle24_count <- rle24_sum %>%
+    rename(`Critically Endangered` = CR, 
+           `Endangered` = EN, 
+           `Vulnerable` = VU, 
+           `Least Concern` = LC ) # %>%
+  # select(-...1) # required if importing from CSV
+ 
+rle24_barplot_count <- nba_plot(pd_rle24_count,
+                  `zone`,
+                  2:5,
+                 CHRT = "bar",
+                 NUM = TRUE,
+                 LAB = "Percentage of ecosystem types",
+                SAVE = NULL)
+
+
+#export the 2024 plot of counts 
+ggsave(
+  filename = "outputs/rle24_riv_barplot_count.jpeg", # File name
+  plot = rle24_barplot_count,                  # Plot object
   device = "jpeg",                        # File format
   width = 16, height = 12, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
@@ -395,7 +423,6 @@ rle18sa_barplot_count <- nba_plot(pd_rle18sa_count,
                  LAB = "Percentage of ecosystem types",
                 SAVE = NULL)
 
-rle18sa_barplot_count
 
 #export the graph
 ggsave(
