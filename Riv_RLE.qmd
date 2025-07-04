@@ -377,7 +377,7 @@ ggsave(
   filename = "outputs/rle24sa_riv_barplot_count.jpeg", # File name
   plot = rle24sa_barplot_count,                  # Plot object
   device = "jpeg",                        # File format
-  width = 12, height = 8, units = "cm",   # Dimensions
+  width = 12, height = 6, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
 )
 
@@ -403,7 +403,7 @@ ggsave(
   filename = "outputs/rle24_riv_barplot_count.jpeg", # File name
   plot = rle24_barplot_count,                  # Plot object
   device = "jpeg",                        # File format
-  width = 12, height = 8, units = "cm",   # Dimensions
+  width = 12, height = 6, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
 )
 

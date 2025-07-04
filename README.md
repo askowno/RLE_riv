@@ -24,8 +24,8 @@ Overall per-ecosystem type Threat Status 2024 results using South African method
 
 Summary table - count of river ecosystem types per slope zone per South African RLE category [rle24_sa_riv_count.csv](outputs/rle24_sa_riv_count.csv)
 
-![Ecosystem Threat Status - Rivers 2024 (South African framework)](outputs/rle24sa_riv_barplot_count.jpeg)
+![Ecosystem Threat Status - Rivers 2024 (South African framework)](outputs/rle24sa_riv_barplot_count.jpeg){width="379"}
 
 Summary table - count of river ecosystem types per slope zone per IUCN RLE category [rle24_riv_count.csv](outputs/rle24_riv_count.csv)
 
-![RLE for Rivers 2024 (IUCN RLE v2)](outputs/rle24_riv_barplot_count.jpeg)
+![RLE  - Rivers 2024 (IUCN RLE v2)](outputs/rle24_riv_barplot_count.jpeg){width="374"}
