@@ -369,15 +369,21 @@ rle24sa_barplot_count <- nba_plot(pd_rle24sa_count,
                  CHRT = "bar",
                  NUM = TRUE,
                  LAB = "Percentage of ecosystem types",
+                 SCALE_TEXT = 0.6,
                 SAVE = NULL)
 
+# adjust legend position
+rle24sa_barplot_count <- rle24sa_barplot_count +
+  theme(
+    legend.position = "bottom",             # keep it at the bottom
+    legend.margin = margin(l = -45, r = -5, t = -5, b = -5)) 
 
 #export the 2024 plot of counts 
 ggsave(
   filename = "outputs/rle24sa_riv_barplot_count.jpeg", # File name
   plot = rle24sa_barplot_count,                  # Plot object
   device = "jpeg",                        # File format
-  width = 12, height = 6, units = "cm",   # Dimensions
+  width = 8, height = 6, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
 )
 
@@ -395,15 +401,21 @@ rle24_barplot_count <- nba_plot(pd_rle24_count,
                  CHRT = "bar",
                  NUM = TRUE,
                  LAB = "Percentage of ecosystem types",
+                 SCALE_TEXT = 0.6,
                 SAVE = NULL)
 
+# adjust legend position
+rle24_barplot_count <- rle24_barplot_count +
+  theme(
+    legend.position = "bottom",             # keep it at the bottom
+    legend.margin = margin(l = -45, r = -5, t = -5, b = -5)) 
 
 #export the 2024 plot of counts 
 ggsave(
   filename = "outputs/rle24_riv_barplot_count.jpeg", # File name
   plot = rle24_barplot_count,                  # Plot object
   device = "jpeg",                        # File format
-  width = 12, height = 6, units = "cm",   # Dimensions
+  width = 8, height = 6, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
 )
 
