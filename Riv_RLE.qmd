@@ -26,8 +26,8 @@ riv <- rivers %>%
   # clean up non SA type and remove estuaries and foreign segments
   filter(RIVTYPE != "Foreign", PES2018 != "Foreign", PES2024 != "Foreign",
                      PES2018 != "Estuary",  PES2018 != "Estuary") %>%   
-  # ensure consistency with Data defic segments  
-  mutate(PES2018 = ifelse(PES2018 == "Data defic" & PES2024 != "Data defic", PES2024                          , PES2018)) %>%
+    # convert Na in PES 2014 to DDef
+  mutate(PES2014 = ifelse(is.na(PES2014), "Data defic", PES2014)) %>%
   # Drop geometry to work as a plain table
   st_drop_geometry() 
   
@@ -49,8 +49,8 @@ riv_eoo <- rivers %>%
   # clean up non SA type and remove estuaries and foreign segments
   filter(RIVTYPE != "Foreign", PES2018 != "Foreign", PES2024 != "Foreign",
                      PES2018 != "Estuary",  PES2018 != "Estuary") %>%   
-  # ensure consistency with Data defic segments  
-  mutate(PES2018 = ifelse(PES2018 == "Data defic" & PES2024 != "Data defic", PES2024                          , PES2018))
+  # convert Na in PES 2014 to DDef
+  mutate(PES2014 = ifelse(is.na(PES2014), "Data defic",PES2014))
 
 # Iterate through unique T_MAPCODE values 
 for (rivcode in unique(riv_eoo$RIVTYPE)) {
@@ -80,6 +80,13 @@ write.csv(eoo_df, "outputs/EOO_all.csv")
 options(scipen = 999)
 
 #overall summary
+riv_type_14 <- riv %>%
+    group_by(RIVTYPE, PES2014) %>%
+  summarise(leng = sum(as.numeric(leng), na.rm = TRUE)) %>%
+  ungroup() %>%
+  pivot_wider(names_from = PES2014, values_from = leng, values_fill = list(leng = 0))  %>%
+  mutate(tot_leng14 = rowSums(across(c(A, B, C, D, E, F, `Data defic`))))
+
 riv_type_18 <- riv %>%
     group_by(RIVTYPE, PES2018) %>%
   summarise(leng = sum(as.numeric(leng), na.rm = TRUE)) %>%
@@ -98,7 +105,9 @@ riv_type_24 <- riv %>%
  
 # Join the tables above - this makes a single table in which all the required metric can be found to compute EPL and RLE
  
- riv_type_metrics <- riv_type_18 %>%
+ riv_type_metrics <- riv_type_14 %>%
+   rename(A14=A, B14=B, C14=C, D14=D, E14=E, F14=F, DDef14 = `Data defic`) %>%
+   left_join(riv_type_18, by = "RIVTYPE") %>%
    rename(A18=A, B18=B, C18=C, D18=D, E18=E, F18=F, DDef18 = `Data defic`) %>%
   left_join(riv_type_24, by = "RIVTYPE") %>%
     rename(DDef = `Data defic`) %>%
@@ -106,28 +115,41 @@ riv_type_24 <- riv %>%
     mutate(prp18_cdef = (C18 + D18 + E18 + F18)/tot_leng18) %>%
     mutate(prp18_def = (D18 + E18 + F18 )/tot_leng18) %>%
     mutate(prp18_ef= (E18 + F18)/tot_leng18) %>%
-    mutate(prp18_f= F18/tot_leng18) %>%
+    mutate(prp18_f = F18/tot_leng18) %>%
     mutate(prp24_cdef = (C + D + E + F)/tot_leng24) %>%
     mutate(prp24_def = (D + E + F )/tot_leng24) %>%
-    mutate(prp24_ef= (E + F)/tot_leng24) %>%
-    mutate(prp24_f= F/tot_leng24) %>%
+    mutate(prp24_ef = (E + F)/tot_leng24) %>%
+    mutate(prp24_f = F/tot_leng24) %>%
+# add in change in PES for B1i ongoing decline evidence (PES ABC DD extent decline > 1%)  
+# length of good river (ABC&DDef) declines by >1% from t1 to t2
+   mutate(pes_decline1418 = ifelse(
+      (((A14 + B14 + C14 + DDef14) - (A18 + B18 + C18 + DDef18))
+      / (A14 + B14 + C14 + DDef14)) 
+      > 0.01, "decline1418", "nodecline1418"))  %>%
+    mutate(pes_decline1824 = ifelse(
+      (((A18 + B18 + C18 + DDef18) - (A + B + C + DDef))
+      / (A18 + B18 + C18 + DDef18)) 
+      > 0.01, "decline1824", "nodecline1824"))  %>%
+# add D3 using PES as measure of functional decline due to biotic disruption (and environmental degradation) 
+# PES EF ~ 90%-100% severity; DEF ~ 70%-100% severity; CDEF ~ 50%-100% severity
     mutate(D3_18 = case_when( prp18_ef >= 0.9 ~ "CR", 
                                  prp18_ef >= 0.7 | prp18_def >=0.9 ~ "EN",
                                  prp18_ef >= 0.5 | prp18_def >=0.7 | 
-                                                  prp18_cdef >= 0.9 ~ "VU", 
+                                                   prp18_cdef >= 0.9 ~ "VU", 
                                  TRUE ~ "LC")) %>% 
     mutate(D3_24 = case_when( prp24_ef >= 0.9 ~ "CR", 
                                  prp24_def >= 0.3 | prp24_def >=0.9 ~ "EN",
-                                 prp24_ef >= 0.5 | prp24_def >=0.7 | 
-                                                  prp24_cdef >= 0.9 ~ "VU", 
+                                 prp24_ef  >= 0.5 | prp24_def >=0.7 | 
+                                                    prp24_cdef >= 0.9 ~ "VU", 
                                  TRUE ~ "LC")) %>%
-   mutate(B1_18 = case_when( prp18_def >= 0.3 & eoo_km2  <= 2000 ~ "CR",
-                             prp18_def >= 0.3 & eoo_km2  <= 20000 ~ "EN",
-                              prp18_def >= 0.3 & eoo_km2  <= 50000 ~ "VU",
+# add B1i using declining PES trend as evidence of ongoing decline (calculated above in pes_decline)
+   mutate(B1_18 = case_when( pes_decline1418 == "decline1418" & eoo_km2  <= 2000 ~ "CR",
+                             pes_decline1418 == "decline1418" & eoo_km2  <= 20000 ~ "EN",
+                             pes_decline1418 == "decline1418" & eoo_km2  <= 50000 ~ "VU",
                                  TRUE ~ "LC")) %>%
-   mutate(B1_24 = case_when( prp24_def >= 0.3 & eoo_km2  <= 2000 ~ "CR",
-                             prp24_def >= 0.3 & eoo_km2  <= 20000 ~ "EN",
-                              prp24_def >= 0.3 & eoo_km2  <= 50000 ~ "VU",
+   mutate(B1_24 = case_when( pes_decline1824 == "decline1824" & eoo_km2  <= 2000 ~ "CR",
+                             pes_decline1824 == "decline1824" & eoo_km2  <= 20000 ~ "EN",
+                             pes_decline1824 == "decline1824" & eoo_km2  <= 50000 ~ "VU",
                                  TRUE ~ "LC")) %>%
    # ensure highest risk cateroy is assiged 
    mutate(RLE_18 = case_when(B1_18 == "CR" | D3_18 == "CR" ~ "CR", 
@@ -138,9 +160,8 @@ riv_type_24 <- riv %>%
                              B1_24 == "EN" | D3_24 == "EN" ~ "EN",
                              B1_24 == "VU" | D3_24 == "VU" ~ "VU",
                               TRUE ~ "LC")) %>%
-   # add in Nel 2011 and van Deventer 2018 method: SA approach assuming A and B are intact rest is lost but also counting C towards  VU
-   
-   mutate(A3sa_24 = case_when( prp24_cdef >= 0.8 ~ "CR", 
+# add van Deventer 2018 method: SA approach assuming A and B are intact rest is lost but also counting C towards VU
+    mutate(A3sa_24 = case_when( prp24_cdef >= 0.8 ~ "CR", 
                               prp24_cdef >= 0.65 ~ "EN",
                               prp24_def >= 0.4 ~ "VU", 
                                  TRUE ~ "LC")) %>%
@@ -419,6 +440,13 @@ ggsave(
   dpi = 300                               # Resolution
 )
 
+
+
+```
+
+Make more plots
+
+```{r}
 # Use NBA package to make RLE 2018  plot  using  Nel 2011 methods
 pd_rle18sa_count <- rle18sa_sum %>%
     rename(`Critically Endangered` = CR, 
@@ -501,11 +529,5 @@ ggsave(
   width = 16, height = 12, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
 )
-
-```
-
-Make Maps
-
-```{r}
 
 ```
