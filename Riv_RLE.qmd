@@ -72,7 +72,10 @@ eoo_df <- data.frame(
 write.csv(eoo_df, "outputs/EOO_all.csv")
 
 
+
 ```
+
+RLE and ETS assessment of river ecosystem types 
 
 ```{r}
 
@@ -102,7 +105,6 @@ riv_type_24 <- riv %>%
   mutate(tot_leng24 = rowSums(across(c(A, B, C, D, E, F, `Data defic`))))
 
 
- 
 # Join the tables above - this makes a single table in which all the required metric can be found to compute EPL and RLE
  
  riv_type_metrics <- riv_type_14 %>%
@@ -181,7 +183,7 @@ riv_type_24 <- riv %>%
    
 ```
 
-RLE for Rivers using IUCN RLE methods
+RLE Summary per slope zone
 
 ```{r}
 # 2018 summaries IUCN RLE approach 
@@ -262,7 +264,7 @@ rle18_sum <- riv_type_metrics %>%
    
 ```
 
-RLE for Rivers using van Deventer 2019 method
+ETS Summary per slope zone
 
 ```{r}
 # A3 SA methods results 

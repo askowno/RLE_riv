@@ -10,9 +10,9 @@ June 2025
 
 This repository contains a workflow that results in the NBA 2025 Red List of Ecosystems indicators for River Ecosystems of South Africa.
 
-The Quarto document [Riv_RLE.qmd](Riv_RLE.qmd) describes the import of the South African rivers database (v20250610) prepared by SANBI. The data were imported using the sf package in R and summarised using the tidyverse in R.
+The Quarto document [Riv_RLE.qmd](Riv_RLE.qmd) describes the import of the South African rivers database (v20250610) prepared by SANBI. The data were imported using the sf package in R and summarised using the tidyverse in R. The dataset covers 222 river ecosystem types includes per-feature Present Ecological Stats (PES) scores (A-F, good - very poor) developed by XXX
 
-The Red List of Ecosystems (also known as Ecosystem Threat Status in South Africa) assesses the risk of collapse of each ecosystem type based on a range of criteria on extent condition and pressures faced by each ecosystem type.
+The Red List of Ecosystems (also known as Ecosystem Threat Status in South Africa) assesses the risk of collapse of each ecosystem type based on a range of criteria on extent, condition and pressures faced by each ecosystem type.
 
 The IUCN RLE (v2) approach was followed and Criterion D3 was applied to the Present Ecological State (PES) data such that Severity \>=90% was assigned to PES classes E-F; Severity \>=70% was assigned to PES classes D-F; Severity \>=50% was assigned to PES classes C-F. Criterion B1i was applied using EOO calculations with ongoing decline defined as a decline in the extent of good/fair condition river length (PES Classes A, B, C) from the previous PES assessment period. Each of the 222 river ecosystems types were assigned to one of the four risk categories: Critically Endangered, Endangered, Vulnerable and Least Concern. The highest risk category for these two criteria is selected as the threat / risk status for each river type.
 
