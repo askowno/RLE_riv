@@ -20,7 +20,7 @@ For consistency with past assessments the South African Ecosystem Threat Status 
 
 #### **Results:**
 
-The assessment results per river ecosystem type for bothe the IUCN RLE and South African ETS are presented here [rle_riv_metrics_per_type.csv](outputs/rle_riv_metrics_per_type.csv).
+The assessment results per river ecosystem type for both the IUCN RLE and South African ETS are presented here [rle_riv_metrics_per_type.csv](outputs/rle_riv_metrics_per_type.csv).
 
 Summary table - count of river ecosystem types per slope zone per IUCN RLE category [rle24_riv_count.csv](outputs/rle24_riv_count.csv)
 
