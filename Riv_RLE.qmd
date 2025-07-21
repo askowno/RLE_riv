@@ -75,7 +75,7 @@ write.csv(eoo_df, "outputs/EOO_all.csv")
 
 ```
 
-RLE and ETS assessment of river ecosystem types 
+RLE and ETS assessment of river ecosystem types
 
 ```{r}
 
@@ -122,7 +122,7 @@ riv_type_24 <- riv %>%
     mutate(prp24_def = (D + E + F )/tot_leng24) %>%
     mutate(prp24_ef = (E + F)/tot_leng24) %>%
     mutate(prp24_f = F/tot_leng24) %>%
-# add in change in PES for B1i ongoing decline evidence (PES ABC DD extent decline > 1%)  
+# add in change in PES for B1aiii ongoing decline evidence (PES ABC DD extent decline > 1%)  
 # length of good river (ABC&DDef) declines by >1% from t1 to t2
    mutate(pes_decline1418 = ifelse(
       (((A14 + B14 + C14 + DDef14) - (A18 + B18 + C18 + DDef18))
@@ -144,7 +144,7 @@ riv_type_24 <- riv %>%
                                  prp24_ef  >= 0.5 | prp24_def >=0.7 | 
                                                     prp24_cdef >= 0.9 ~ "VU", 
                                  TRUE ~ "LC")) %>%
-# add B1i using declining PES trend as evidence of ongoing decline (calculated above in pes_decline)
+# add B1aiii using declining PES trend as evidence of ongoing decline (calculated above in pes_decline)
    mutate(B1_18 = case_when( pes_decline1418 == "decline1418" & eoo_km2  <= 2000 ~ "CR",
                              pes_decline1418 == "decline1418" & eoo_km2  <= 20000 ~ "EN",
                              pes_decline1418 == "decline1418" & eoo_km2  <= 50000 ~ "VU",
