@@ -31,7 +31,6 @@ riv <- rivers %>%
   # Drop geometry to work as a plain table
   st_drop_geometry() 
   
-
 ## Note these data extend outside of SA and into estuaries - these segements need to be filtered out when doing computations. 
 
 ```
@@ -188,7 +187,7 @@ RLE Summary per slope zone
 ```{r}
 # 2018 summaries IUCN RLE approach 
 # make summary counts of RLE categories per River Slopes Zones IUCN approach D3
-riv_type_metrics <- read_csv("outputs/rle_riv_metrics_per_type.csv") 
+#riv_type_metrics <- read_csv("outputs/rle_riv_metrics_per_type.csv") 
 
 rle18_sum <- riv_type_metrics %>%
     group_by(RLE_18, zone) %>%
@@ -374,43 +373,18 @@ rle18sa_sum <- riv_type_metrics %>%
 #### **Make graphs for NBA**
 
 ```{r}
-
 # load nbaR package : first run this in console devtools::install_github("SANBI-NBA/nbaR") 
 library(nbaR)
+library(extrafont) # this has tools for embedding fonts in vector graphics which 
+# is required by the design team of the booklet.
+loadfonts(device = "pdf") # this is required as device = cairo_pdf is not compatible with CorelDraw
+```
 
-# Use NBA package to make RLE 2024  plot  using  Van Deventer 2019 methods
-pd_rle24sa_count <- rle24sa_sum %>%
-    rename(`Critically Endangered` = CR, 
-           `Endangered` = EN, 
-           `Vulnerable` = VU, 
-           `Least Concern` = LC ) # %>%
-  # select(-...1) # required if importing from CSV
- 
-rle24sa_barplot_count <- nba_plot(pd_rle24sa_count,
-                  `zone`,
-                  2:5,
-                 CHRT = "bar",
-                 NUM = TRUE,
-                 LAB = "Percentage of ecosystem types",
-                 SCALE_TEXT = 0.6,
-                SAVE = NULL)
+2024 plots using IUCN RLE methods
 
-# adjust legend position
-rle24sa_barplot_count <- rle24sa_barplot_count +
-  theme(
-    legend.position = "bottom",             # keep it at the bottom
-    legend.margin = margin(l = -45, r = -5, t = -5, b = -5)) 
+```{r}
 
-#export the 2024 plot of counts 
-ggsave(
-  filename = "outputs/rle24sa_riv_barplot_count.jpeg", # File name
-  plot = rle24sa_barplot_count,                  # Plot object
-  device = "jpeg",                        # File format
-  width = 8, height = 6, units = "cm",   # Dimensions
-  dpi = 300                               # Resolution
-)
-
-# Use NBA package to make RLE 2024  plot  using  IUCN RLE v2
+#####  2024  plot  using  IUCN RLE v2 ###############################
 pd_rle24_count <- rle24_sum %>%
     rename(`Critically Endangered` = CR, 
            `Endangered` = EN, 
@@ -438,46 +412,80 @@ ggsave(
   filename = "outputs/rle24_riv_barplot_count.jpeg", # File name
   plot = rle24_barplot_count,                  # Plot object
   device = "jpeg",                        # File format
-  width = 8, height = 6, units = "cm",   # Dimensions
+  width = 9, height = 7, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
 )
 
+###### 2024  plots of extent using   IUCN RLE v2   #########################################
+pd_rle24_ext <- rle24_ext %>%
+     rename(`Critically Endangered` = CR,
+           `Endangered` = EN,
+           `Vulnerable` = VU,
+           `Least Concern` = LC ) # %>%
+  # select(-...1) # required if importing from CSV
 
+rle24_barplot_ext <- nba_plot(pd_rle24_ext,
+                  `zone`,
+                  2:5,
+                 CHRT = "bar",
+                 NUM = FALSE,
+                 LAB = "Percentage of ecosystem extent (km)",
+                 SCALE_TEXT = 0.6,
+                 SAVE = NULL)
+
+# adjust legend position
+rle24_barplot_ext <- rle24_barplot_ext +
+  theme(
+    legend.position = "bottom",             # keep it at the bottom
+    legend.margin = margin(l = -45, r = -5, t = -5, b = -5)) 
+
+#export  
+ggsave(
+  filename = "outputs/rle24_riv_barplot_ext.jpeg", # File name
+  plot = rle24_barplot_ext,                  # Plot object
+  device = "jpeg",                        # File format
+  width = 9, height = 7, units = "cm",   # Dimensions
+  dpi = 300                               # Resolution
+)
 
 ```
 
-Make more plots
+2024 plots using SA methods
 
 ```{r}
-# Use NBA package to make RLE 2018  plot  using  Nel 2011 methods
-pd_rle18sa_count <- rle18sa_sum %>%
+##### 2024  plots of counts  using  SA methods ############################
+pd_rle24sa_count <- rle24sa_sum %>%
     rename(`Critically Endangered` = CR, 
            `Endangered` = EN, 
            `Vulnerable` = VU, 
            `Least Concern` = LC ) # %>%
   # select(-...1) # required if importing from CSV
  
-rle18sa_barplot_count <- nba_plot(pd_rle18sa_count,
+rle24sa_barplot_count <- nba_plot(pd_rle24sa_count,
                   `zone`,
                   2:5,
                  CHRT = "bar",
                  NUM = TRUE,
                  LAB = "Percentage of ecosystem types",
+                 SCALE_TEXT = 0.6,
                 SAVE = NULL)
 
+# adjust legend position
+rle24sa_barplot_count <- rle24sa_barplot_count +
+  theme(
+    legend.position = "bottom",             # keep it at the bottom
+    legend.margin = margin(l = -45, r = -5, t = -5, b = -5)) 
 
-#export the graph
+#export the 2024 plot of counts 
 ggsave(
-  filename = "outputs/rle18sa_riv_barplot_count.jpeg", # File name
-  plot = rle18sa_barplot_count,                  # Plot object
+  filename = "outputs/rle24sa_riv_barplot_count.jpeg", # File name
+  plot = rle24sa_barplot_count,                  # Plot object
   device = "jpeg",                        # File format
-  width = 16, height = 12, units = "cm",   # Dimensions
+  width = 9, height = 7, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
 )
 
-## Make plots of extent per slope zone per RLE SA methods  #########################################################
-
-# 2024  plots of extent of RLE SA 
+###### 2024  plots of extent using   SA Methods   #########################################
 pd_rle24sa_ext <- rle24sa_ext %>%
      rename(`Critically Endangered` = CR,
            `Endangered` = EN,
@@ -491,45 +499,139 @@ rle24sa_barplot_ext <- nba_plot(pd_rle24sa_ext,
                  CHRT = "bar",
                  NUM = FALSE,
                  LAB = "Percentage of ecosystem extent (km)",
-                SAVE = NULL)
+                 SCALE_TEXT = 0.6,
+                 SAVE = NULL)
 
-rle24sa_barplot_ext
+# adjust legend position
+rle24sa_barplot_ext <- rle24sa_barplot_ext +
+  theme(
+    legend.position = "bottom",             # keep it at the bottom
+    legend.margin = margin(l = -45, r = -5, t = -5, b = -5)) 
 
-#export the graph of SA RLE 2014 extent summary 
+#export  
 ggsave(
   filename = "outputs/rle24sa_riv_barplot_ext.jpeg", # File name
-  plot = rle24sa_barplot_ext,                   # Plot object
+  plot = rle24sa_barplot_ext,                  # Plot object
   device = "jpeg",                        # File format
-  width = 16, height = 12, units = "cm",   # Dimensions
+  width = 9, height = 7, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
 )
+```
 
-# 2018 plots of extent of RLE SA 
+2018 plots for RLE and SA methods count only
 
-pd_rle18sa_ext <- rle18sa_ext %>%
-     rename(`Critically Endangered` = CR,
-           `Endangered` = EN,
-           `Vulnerable` = VU,
+```{r}
+### 2018  plot of count using IUCN RLE v2 ##################
+pd_rle18_count <- rle18_sum %>%
+    rename(`Critically Endangered` = CR, 
+           `Endangered` = EN, 
+           `Vulnerable` = VU, 
            `Least Concern` = LC ) # %>%
   # select(-...1) # required if importing from CSV
-
-rle18sa_barplot_ext <- nba_plot(pd_rle18sa_ext,
+ 
+rle18_barplot_count <- nba_plot(pd_rle18_count,
                   `zone`,
                   2:5,
                  CHRT = "bar",
-                 NUM = FALSE,
-                 LAB = "Percentage of ecosystem extent (km)",
-                SAVE = NULL)
+                 NUM = TRUE,
+                 LAB = "Percentage of ecosystem types",
+                 SCALE_TEXT = 0.6,
+                 SAVE = NULL)
 
-rle18sa_barplot_ext
+# adjust legend position
+rle18_barplot_count <- rle18_barplot_count +
+  theme(
+    legend.position = "bottom",             # keep it at the bottom
+    legend.margin = margin(l = -45, r = -5, t = -5, b = -5)) 
 
-#export the graph of SA RLE 2014 extent summary 
+#export  
 ggsave(
-  filename = "outputs/rle18sa_riv_barplot_ext.jpeg", # File name
-  plot = rle18sa_barplot_ext,                   # Plot object
+  filename = "outputs/rle18_riv_barplot_count.jpeg", # File name
+  plot = rle18_barplot_count,                  # Plot object
   device = "jpeg",                        # File format
-  width = 16, height = 12, units = "cm",   # Dimensions
+  width = 9, height = 7, units = "cm",   # Dimensions
   dpi = 300                               # Resolution
+)
+
+
+####  2018  plot of count using SA methods ####################################
+pd_rle18sa_count <- rle18sa_sum %>%
+    rename(`Critically Endangered` = CR, 
+           `Endangered` = EN, 
+           `Vulnerable` = VU, 
+           `Least Concern` = LC ) # %>%
+  # select(-...1) # required if importing from CSV
+ 
+rle18sa_barplot_count <- nba_plot(pd_rle18sa_count,
+                  `zone`,
+                  2:5,
+                 CHRT = "bar",
+                 NUM = TRUE,
+                 LAB = "Percentage of ecosystem types",
+                 SCALE_TEXT = 0.6,
+                 SAVE = NULL)
+
+# adjust legend position
+rle18sa_barplot_count <- rle18sa_barplot_count +
+  theme(
+    legend.position = "bottom",             # keep it at the bottom
+    legend.margin = margin(l = -45, r = -5, t = -5, b = -5)) 
+
+#export the 2018sa plot of counts 
+ggsave(
+  filename = "outputs/rle18sa_riv_barplot_count.jpeg", # File name
+  plot = rle18sa_barplot_count,                  # Plot object
+  device = "jpeg",                        # File format
+  width = 9, height = 7, units = "cm",   # Dimensions
+  dpi = 300                               # Resolution
+)
+
+```
+
+Plot of Red List Index of Ecosystems for 2018 and 2014 using RLE and SA methods
+
+```{r}
+## RLIE plot 2018-2014 using SA methofs ################################
+
+RLIEsa <- rle24sa_sum %>%
+  select(zone, RLIE) %>% 
+  rename(RLIE24 = RLIE) %>%
+   left_join(rle18_sum, by ="zone") %>%
+   rename(RLIE18 = RLIE) %>%
+   rename(Zone = zone) %>%
+  select(Zone,RLIE18, RLIE24) %>%
+  pivot_longer(cols = c(2,3), names_to = "Year", values_to = "RLIE") %>%
+    mutate(Year = case_when(
+    Year == "RLIE18" ~ "2018",
+    Year == "RLIE24" ~ "2024",
+    TRUE ~ Year
+  ))
+
+rlie_sa_plot <- ggplot(RLIEsa, aes(x = Year, y = RLIE, group = Zone)) +
+  geom_line(aes(linetype = Zone, color = Zone), linewidth = 1.2) +
+  geom_point(aes(color = Zone), size = 2) +
+  theme_minimal() +
+  labs(x = "Year", y = "RLIE") +
+  scale_x_discrete(limits = c("2018", "2024"), expand = c(0, 0)) +
+  scale_color_manual(values = c(
+    "Total" = "black",
+    "Lowland river" = "blue",
+    "Lower foothill" = "darkgreen",
+    "Upper foothill" = "brown",
+    "Mountain stream" = "orange"
+  )) +
+  coord_cartesian(ylim = c(0.1, 0.9)) +
+    guides(color = guide_legend(reverse = TRUE),
+         linetype = guide_legend(reverse = TRUE)) +
+  theme(legend.title = element_blank())
+ 
+  
+  #export the graph
+ggsave(
+  filename = "outputs/rlie_sa_plot.png", # File name
+  plot = rlie_sa_plot,                   # Plot object
+  device = "png",                        # File format
+  width = 12, height = 10, units = "cm"   # Dimensions
 )
 
 ```
