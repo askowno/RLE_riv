@@ -15,13 +15,13 @@ EPL <- read.csv("C:/Rdata/EPL_riv/outputs/epl_riv_metrics_per_type.csv")
 
 # select only cols required and then join
 RLE <- RLE %>%
-  select(RIVTYPE, RLE_18, RLE_24, A3sa_18, A3sa_24) %>%
-  rename(RLE18 = RLE_18, RLE24 = RLE_24, RLEsa18 = A3sa_18, RLEsa24 = A3sa_24)
+  select(RIVTYPE, RLE_18, RLE_24, A3sa_18, A3sa_24, tot_leng24) %>%
+  rename(RLE18 = RLE_18, RLE24 = RLE_24, RLEsa18 = A3sa_18, RLEsa24 = A3sa_24, extent = tot_leng24)
 EPL <- EPL %>%
-  select(RIVTYPE, zone, EPL18_wp_ab_model, EPL24_wp_ab_model) %>% 
+  select(RIVTYPE, zone,  EPL18_wp_ab_model, EPL24_wp_ab_model) %>% 
   rename(EPL18 = EPL18_wp_ab_model, EPL24 = EPL24_wp_ab_model)
   
-riv_results <- RLE %>%
+riv_results_type <- RLE %>%
   left_join(EPL, by = "RIVTYPE") %>%
   # combine RLE and EPL into a new col
   unite("RLE_EPL24", RLE24, EPL24, sep = "_", remove = FALSE) %>%
@@ -32,7 +32,13 @@ riv_results <- RLE %>%
   relocate(zone, .after = RIVTYPE) %>%
   relocate(RLE_EPL24, .after = EPL24)
 
-# Step 1: Group and pivot wider
+# MAKE simple output for coastal and overal integrated results and plots 
+riv_results_for_integration <- riv_results_type %>%
+  select(RIVTYPE, zone, extent, RLE24, EPL24, RLE_EPL24) %>%
+  mutate(realm = "riv") %>%
+  rename(type = RIVTYPE, RLE = RLE24, EPL = EPL24, RLE_EPL = RLE_EPL24)
+
+# summarise unluckies 
 unlucky_wide <- riv_results %>% 
   group_by(RLE_EPL24, zone) %>% 
   summarise(count = n(), .groups = "drop") %>%
@@ -46,8 +52,13 @@ unlucky_wide <- riv_results %>%
               across(where(is.numeric), ~sum(.x, na.rm = TRUE)))
   )
 
+
+
 # write results
-write.csv(riv_results, file = "outputs/RLE_EPL_riv_results.csv")
+write.csv(riv_results, file = "outputs/riv_results_type.csv")
+write.csv(riv_results_for_integration, file = "outputs/riv_results_for_integration.csv")
+write.csv(unlucky_wide, file = "outputs/riv_unluckies.csv")
+
 ```
 
 ```{r}
