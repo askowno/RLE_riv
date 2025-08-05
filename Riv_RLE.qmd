@@ -26,8 +26,12 @@ riv <- rivers %>%
   # clean up non SA type and remove estuaries and foreign segments
   filter(RIVTYPE != "Foreign", PES2018 != "Foreign", PES2024 != "Foreign",
                      PES2018 != "Estuary",  PES2018 != "Estuary") %>%   
-    # convert Na in PES 2014 to DDef
-  mutate(PES2014 = ifelse(is.na(PES2014), "Data defic", PES2014)) %>%
+  # convert NA in PES 2014 to PES 2018 (assume no difference)
+  mutate(PES2014 = ifelse(is.na(PES2014), PES2018, PES2014)) %>%
+  # clean up DDef18 by looking forward to 24 then back to 14; then clean up DDef24 by looking back to 18 
+  mutate(PES2018 = ifelse(PES2018 == "Data defic" & PES2024 != "Data defic", PES2024, PES2018))%>%
+  mutate(PES2018 = ifelse(PES2018 == "Data defic" & PES2014 != "Data defic", PES2014, PES2018))%>%
+  mutate(PES2024 = ifelse(PES2024 == "Data defic" & PES2018 != "Data defic", PES2018, PES2024))%>%
   # Drop geometry to work as a plain table
   st_drop_geometry() 
   
@@ -45,11 +49,11 @@ eoo_list <- list()
 riv_eoo <- rivers %>%
   mutate(leng = as.numeric(st_length(geometry))) %>%
   rename(PES2024 = NBA2025_PE) %>% # fix name of PES 2024
+  mutate(PES2014 = ifelse(is.na(PES2014), "Data defic", PES2014)) %>%
+  select(RIVTYPE, PES2024, PES2018, PES2014) %>%
   # clean up non SA type and remove estuaries and foreign segments
   filter(RIVTYPE != "Foreign", PES2018 != "Foreign", PES2024 != "Foreign",
-                     PES2018 != "Estuary",  PES2018 != "Estuary") %>%   
-  # convert Na in PES 2014 to DDef
-  mutate(PES2014 = ifelse(is.na(PES2014), "Data defic",PES2014))
+                     PES2018 != "Estuary",  PES2018 != "Estuary") 
 
 # Iterate through unique T_MAPCODE values 
 for (rivcode in unique(riv_eoo$RIVTYPE)) {
@@ -81,78 +85,66 @@ RLE and ETS assessment of river ecosystem types
 #summarise by River type including segment length per type per condition class - this allows for inclusion of condition in the EPL formula
 options(scipen = 999)
 
-#overall summary
-riv_type_14 <- riv %>%
-    group_by(RIVTYPE, PES2014) %>%
-  summarise(leng = sum(as.numeric(leng), na.rm = TRUE)) %>%
-  ungroup() %>%
-  pivot_wider(names_from = PES2014, values_from = leng, values_fill = list(leng = 0))  %>%
-  mutate(tot_leng14 = rowSums(across(c(A, B, C, D, E, F, `Data defic`))))
-
 riv_type_18 <- riv %>%
     group_by(RIVTYPE, PES2018) %>%
   summarise(leng = sum(as.numeric(leng), na.rm = TRUE)) %>%
   ungroup() %>%
   pivot_wider(names_from = PES2018, values_from = leng, values_fill = list(leng = 0))  %>%
-  mutate(tot_leng18 = rowSums(across(c(A, B, C, D, E, F, `Data defic`))))
+  mutate(tot_leng18 = rowSums(across(c(A, B, C, D, E, F, `Data defic`)))) %>%
+  mutate(prcDDef18 = `Data defic`/(A+B+C+D+E+F+`Data defic`))
 
 riv_type_24 <- riv %>%
     group_by(RIVTYPE, PES2024) %>%
   summarise(leng = sum(as.numeric(leng), na.rm = TRUE)) %>%
   ungroup() %>%
   pivot_wider(names_from = PES2024, values_from = leng, values_fill = list(leng = 0))  %>%
-  mutate(tot_leng24 = rowSums(across(c(A, B, C, D, E, F, `Data defic`))))
+  mutate(tot_leng24 = rowSums(across(c(A, B, C, D, E, F, `Data defic`)))) %>%
+  mutate(prcDDef24 = `Data defic`/(A+B+C+D+E+F+`Data defic`))
 
 
 # Join the tables above - this makes a single table in which all the required metric can be found to compute EPL and RLE
  
- riv_type_metrics <- riv_type_14 %>%
-   rename(A14=A, B14=B, C14=C, D14=D, E14=E, F14=F, DDef14 = `Data defic`) %>%
-   left_join(riv_type_18, by = "RIVTYPE") %>%
-   rename(A18=A, B18=B, C18=C, D18=D, E18=E, F18=F, DDef18 = `Data defic`) %>%
-  left_join(riv_type_24, by = "RIVTYPE") %>%
+ riv_type_metrics <- riv_type_18 %>%
+    rename(A18=A, B18=B, C18=C, D18=D, E18=E, F18=F, DDef18 = `Data defic`) %>%
+ # Data Defic excluded (segments with PES treated as sample of PES for type) 
+   left_join(riv_type_24, by = "RIVTYPE") %>%
     rename(DDef = `Data defic`) %>%
   left_join(eoo_df, by = "RIVTYPE") %>%
-    mutate(prp18_cdef = (C18 + D18 + E18 + F18)/tot_leng18) %>%
-    mutate(prp18_def = (D18 + E18 + F18 )/tot_leng18) %>%
-    mutate(prp18_ef= (E18 + F18)/tot_leng18) %>%
-    mutate(prp18_f = F18/tot_leng18) %>%
-    mutate(prp24_cdef = (C + D + E + F)/tot_leng24) %>%
-    mutate(prp24_def = (D + E + F )/tot_leng24) %>%
-    mutate(prp24_ef = (E + F)/tot_leng24) %>%
-    mutate(prp24_f = F/tot_leng24) %>%
-# add in change in PES for B1aiii ongoing decline evidence (PES ABC DD extent decline > 1%)  
-# length of good river (ABC&DDef) declines by >1% from t1 to t2
-   mutate(pes_decline1418 = ifelse(
-      (((A14 + B14 + C14 + DDef14) - (A18 + B18 + C18 + DDef18))
-      / (A14 + B14 + C14 + DDef14)) 
-      > 0.01, "decline1418", "nodecline1418"))  %>%
+ # Metrics for RLE 
+   mutate(prp18_cdef = (C18 + D18 + E18 + F18  )/(tot_leng18-DDef18))   %>%
+    mutate(prp18_def = (D18 + E18 + F18 )/(tot_leng18-DDef18)) %>%
+    mutate(prp18_ef= (E18 + F18)/(tot_leng18-DDef18)) %>%
+    mutate(prp24_cdef = (C + D + E + F )/(tot_leng24-DDef)) %>%
+    mutate(prp24_def = (D + E + F )/(tot_leng24-DDef)) %>%
+    mutate(prp24_ef = (E + F)/(tot_leng24-DDef)) %>%
+ # Ongoing decline =  length of good river (ABC) declines by >1% from t1 to t2
     mutate(pes_decline1824 = ifelse(
-      (((A18 + B18 + C18 + DDef18) - (A + B + C + DDef))
-      / (A18 + B18 + C18 + DDef18)) 
-      > 0.01, "decline1824", "nodecline1824"))  %>%
-# add D3 using PES as measure of functional decline due to biotic disruption (and environmental degradation) 
-# PES EF ~ 90%-100% severity; DEF ~ 70%-100% severity; CDEF ~ 50%-100% severity
-    mutate(D3_18 = case_when( prp18_ef >= 0.9 ~ "CR", 
+      (((A18 + B18 + C18  ) - (A + B + C  ))
+      / (A18 + B18 + C18 )) 
+      > 0.01 | (A+B == 0), "decline1824", "nodecline1824"))  %>%
+ # Metrics for SA ETS  
+   mutate(prp18_ab = (A18+B18)/tot_leng18) %>%
+   mutate(prp18_abc = (A18+B18+C18)/tot_leng18) %>%
+   mutate(prp24_ab = (A+B)/tot_leng24) %>%
+   mutate(prp24_abc = (A+B+C)/tot_leng24) %>%
+# D3 assessment using PES as measure of functional decline due to biotic disruption (and environmental degradation) PES EF ~ 90%-100% severity; DEF ~ 70%-100% severity; CDEF ~ 50%-100% severity
+    mutate(D3_18 = case_when(    prp18_ef >= 0.9 ~ "CR", 
                                  prp18_ef >= 0.7 | prp18_def >=0.9 ~ "EN",
                                  prp18_ef >= 0.5 | prp18_def >=0.7 | 
                                                    prp18_cdef >= 0.9 ~ "VU", 
                                  TRUE ~ "LC")) %>% 
-    mutate(D3_24 = case_when( prp24_ef >= 0.9 ~ "CR", 
-                                 prp24_def >= 0.3 | prp24_def >=0.9 ~ "EN",
-                                 prp24_ef  >= 0.5 | prp24_def >=0.7 | 
-                                                    prp24_cdef >= 0.9 ~ "VU", 
+    mutate(D3_24 = case_when(    prp24_ef >= 0.9 ~ "CR", 
+                                 prp24_ef >= 0.7 | prp24_def >=0.9 ~ "EN",
+                                 prp24_ef >= 0.5 | prp24_def >=0.7 | 
+                                                   prp24_cdef >= 0.9 ~ "VU", 
                                  TRUE ~ "LC")) %>%
-# add B1aiii using declining PES trend as evidence of ongoing decline (calculated above in pes_decline)
-   mutate(B1_18 = case_when( pes_decline1418 == "decline1418" & eoo_km2  <= 2000 ~ "CR",
-                             pes_decline1418 == "decline1418" & eoo_km2  <= 20000 ~ "EN",
-                             pes_decline1418 == "decline1418" & eoo_km2  <= 50000 ~ "VU",
-                                 TRUE ~ "LC")) %>%
+# B1aii assessment  using declining PES trend as evidence of ongoing decline (note decline from 2018 to 2024 is used as evidence of ongoing decline for 2018 and 2014 assessments - PES for 2014 is incomplete so this cannot be used in same way as PES18 and PES24)
    mutate(B1_24 = case_when( pes_decline1824 == "decline1824" & eoo_km2  <= 2000 ~ "CR",
                              pes_decline1824 == "decline1824" & eoo_km2  <= 20000 ~ "EN",
                              pes_decline1824 == "decline1824" & eoo_km2  <= 50000 ~ "VU",
                                  TRUE ~ "LC")) %>%
-   # ensure highest risk cateroy is assiged 
+   mutate(B1_18 = B1_24) %>%
+ # Ensure highest risk cateroy is assiged 
    mutate(RLE_18 = case_when(B1_18 == "CR" | D3_18 == "CR" ~ "CR", 
                              B1_18 == "EN" | D3_18 == "EN" ~ "EN",
                              B1_18 == "VU" | D3_18 == "VU" ~ "VU",
@@ -161,14 +153,14 @@ riv_type_24 <- riv %>%
                              B1_24 == "EN" | D3_24 == "EN" ~ "EN",
                              B1_24 == "VU" | D3_24 == "VU" ~ "VU",
                               TRUE ~ "LC")) %>%
-# add van Deventer 2018 method: SA approach assuming A and B are intact rest is lost but also counting C towards VU
-    mutate(A3sa_24 = case_when( prp24_cdef >= 0.8 ~ "CR", 
-                              prp24_cdef >= 0.65 ~ "EN",
-                              prp24_def >= 0.4 ~ "VU", 
+# Add van Deventer 2018 ETS method: assuming A and B are intact rest is lost but also counting C towards VU (use DDfec as PES C)
+    mutate(A3sa_24 = case_when( prp24_ab < 0.2 ~ "CR", 
+                                prp24_ab < 0.35 ~ "EN",
+                                prp24_abc < 0.6 ~ "VU", 
                                  TRUE ~ "LC")) %>%
-    mutate(A3sa_18 = case_when( prp18_cdef >= 0.8 ~ "CR", 
-                               prp18_cdef >= 0.65 ~ "EN",
-                               prp18_def >= 0.4 ~ "VU", 
+    mutate(A3sa_18 = case_when( prp18_ab < 0.2 ~ "CR", 
+                                prp18_ab < 0.35 ~ "EN",
+                                prp18_abc < 0.6 ~ "VU", 
                                  TRUE ~ "LC")) %>%
      # add in River Zones based on last letter of RIVTYPE
    mutate(zone = case_when(str_ends(RIVTYPE, "U") ~ "Upper foothill",
@@ -202,7 +194,7 @@ rle18_sum <- riv_type_metrics %>%
   # Add TOTAL row (column-wise sums)
   bind_rows(summarise(., zone = "Total", across(where(is.numeric), sum))) %>%
   # Add EPLindex
-  mutate(RLIE = (1-((CR*4)+(EN*3)+(VU*2)+(LC*1))/((CR+EN+VU+LC)*5)))  %>%
+  mutate(RLIE = (1-((CR*4)+(EN*3)+(VU*2)+(LC*0))/((CR+EN+VU+LC)*5)))  %>%
     mutate(zone = factor(zone, levels = c("Total", "Lowland river", "Lower foothill"           , "Upper foothill", "Mountain stream"))) %>% ## ggplot plots inverted factors!
    arrange(zone)
  
@@ -226,7 +218,7 @@ rle18_sum <- riv_type_metrics %>%
   # Add TOTAL row (column-wise sums)
   bind_rows(summarise(., zone = "Total", across(where(is.numeric), sum))) %>%
   # Add RLE index
-  mutate(RLIE = (1-((CR*4)+(EN*3)+(VU*2)+(LC*1))/((CR+EN+VU+LC)*5)))  %>%
+  mutate(RLIE = (1-((CR*4)+(EN*3)+(VU*2)+(LC*0))/((CR+EN+VU+LC)*5)))  %>%
     mutate(zone = factor(zone, levels = c("Total", "Lowland river", "Lower foothill"           , "Upper foothill", "Mountain stream"))) %>% ## ggplot plots inverted factors!
    arrange(zone)
  
@@ -282,7 +274,7 @@ rle24sa_sum <- riv_type_metrics %>%
   # Add TOTAL row (column-wise sums)
   bind_rows(summarise(., zone = "Total", across(where(is.numeric), sum))) %>%
   # Add RLE index
-  mutate(RLIE = (1-((CR*4)+(EN*3)+(VU*2)+(LC*1))/((CR+EN+VU+LC)*5)))  %>%
+  mutate(RLIE = (1-((CR*4)+(EN*3)+(VU*2)+(LC*0))/((CR+EN+VU+LC)*5)))  %>%
     mutate(zone = factor(zone, levels = c("Total", "Lowland river", "Lower foothill"           , "Upper foothill", "Mountain stream"))) %>% ## ggplot plots inverted factors!
    arrange(zone)
 
@@ -304,7 +296,7 @@ rle18sa_sum <- riv_type_metrics %>%
   # Add TOTAL row (column-wise sums)
   bind_rows(summarise(., zone = "Total", across(where(is.numeric), sum))) %>%
   # Add RLE index
-  mutate(RLIE = (1-((CR*4)+(EN*3)+(VU*2)+(LC*1))/((CR+EN+VU+LC)*5)))  %>%
+  mutate(RLIE = (1-((CR*4)+(EN*3)+(VU*2)+(LC*0))/((CR+EN+VU+LC)*5)))  %>%
     mutate(zone = factor(zone, levels = c("Total", "Lowland river", "Lower foothill"           , "Upper foothill", "Mountain stream"))) %>% ## ggplot plots inverted factors!
    arrange(zone)
 
@@ -588,12 +580,12 @@ ggsave(
 
 ```
 
-Plot of Red List Index of Ecosystems for 2018 and 2014 using RLE and SA methods
+Plot of Red List Index of Ecosystems for 2018 and 2014 using RLE
 
 ```{r}
-## RLIE plot 2018-2014 using SA methofs ################################
+## RLIE plot 2018-2014 using RLE ################################
 
-RLIEsa <- rle24sa_sum %>%
+RLIE <- rle24_sum %>%
   select(zone, RLIE) %>% 
   rename(RLIE24 = RLIE) %>%
    left_join(rle18_sum, by ="zone") %>%
@@ -607,7 +599,7 @@ RLIEsa <- rle24sa_sum %>%
     TRUE ~ Year
   ))
 
-rlie_sa_plot <- ggplot(RLIEsa, aes(x = Year, y = RLIE, group = Zone)) +
+rlie_plot <- ggplot(RLIE, aes(x = Year, y = RLIE, group = Zone)) +
   geom_line(aes(linetype = Zone, color = Zone), linewidth = 1.2) +
   geom_point(aes(color = Zone), size = 2) +
   theme_minimal() +
@@ -620,7 +612,7 @@ rlie_sa_plot <- ggplot(RLIEsa, aes(x = Year, y = RLIE, group = Zone)) +
     "Upper foothill" = "brown",
     "Mountain stream" = "orange"
   )) +
-  coord_cartesian(ylim = c(0.1, 0.9)) +
+  coord_cartesian(ylim = c(0.3, 0.9)) +
     guides(color = guide_legend(reverse = TRUE),
          linetype = guide_legend(reverse = TRUE)) +
   theme(legend.title = element_blank())
@@ -628,10 +620,58 @@ rlie_sa_plot <- ggplot(RLIEsa, aes(x = Year, y = RLIE, group = Zone)) +
   
   #export the graph
 ggsave(
-  filename = "outputs/rlie_sa_plot.png", # File name
-  plot = rlie_sa_plot,                   # Plot object
+  filename = "outputs/rlie_plot.png", # File name
+  plot = rlie_plot,                   # Plot object
   device = "png",                        # File format
-  width = 12, height = 10, units = "cm"   # Dimensions
+  width = 9, height = 7, units = "cm"   # Dimensions
+)
+
+```
+
+RLIe using SA methods
+
+```{r}
+## RLIE plot 2018-2014 using SA methods  ################################
+
+RLIEsa <- rle24sa_sum %>%
+  select(zone, RLIE) %>% 
+  rename(RLIE24 = RLIE) %>%
+   left_join(rle18sa_sum, by ="zone") %>%
+   rename(RLIE18 = RLIE) %>%
+   rename(Zone = zone) %>%
+  select(Zone,RLIE18, RLIE24) %>%
+  pivot_longer(cols = c(2,3), names_to = "Year", values_to = "RLIE") %>%
+    mutate(Year = case_when(
+    Year == "RLIE18" ~ "2018",
+    Year == "RLIE24" ~ "2024",
+    TRUE ~ Year
+  ))
+
+rliesa_plot <- ggplot(RLIEsa, aes(x = Year, y = RLIE, group = Zone)) +
+  geom_line(aes(linetype = Zone, color = Zone), linewidth = 1.2) +
+  geom_point(aes(color = Zone), size = 2) +
+  theme_minimal() +
+  labs(x = "Year", y = "RLIE") +
+  scale_x_discrete(limits = c("2018", "2024"), expand = c(0, 0)) +
+  scale_color_manual(values = c(
+    "Total" = "black",
+    "Lowland river" = "blue",
+    "Lower foothill" = "darkgreen",
+    "Upper foothill" = "brown",
+    "Mountain stream" = "orange"
+  )) +
+  coord_cartesian(ylim = c(0.3, 0.9)) +
+    guides(color = guide_legend(reverse = TRUE),
+         linetype = guide_legend(reverse = TRUE)) +
+  theme(legend.title = element_blank())
+ 
+  
+  #export the graph
+ggsave(
+  filename = "outputs/rliesa_plot.png", # File name
+  plot = rliesa_plot,                   # Plot object
+  device = "png",                        # File format
+  width = 9, height = 7, units = "cm"   # Dimensions
 )
 
 ```

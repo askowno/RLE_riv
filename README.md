@@ -26,28 +26,43 @@ Summary table - count of river ecosystem types per slope zone per IUCN RLE categ
 
 Summary table - count of river ecosystem types per slope zone per South African ETS category [rle24sa_riv_count.csv](outputs/rle24sa_riv_count.csv)
 
-| RLE 2024 - Rivers | ETS 2024 - Rivers |
+| RLE 2024 - Count of types per category | RLE 2024 - Extent of types per category |
 |------------------------------------|------------------------------------|
-| ![](outputs/rle24_riv_barplot_count.jpeg) | ![](outputs/rle24sa_riv_barplot_count.jpeg) |
+| ![](outputs/rle24_riv_barplot_count.jpeg) | ![](outputs/rle24_riv_barplot_ext.jpeg) |
+
+| ETS (SA method) - Count of types per category | ETS (SA method) - Extent of types per category |
+|----|----|
+| ![](outputs/rle24sa_riv_barplot_count.jpeg) | ![](outputs/rle24sa_riv_barplot_ext.jpeg) |
 
 **RLE Index**
 
 Reflecting changes in RLE between 2018 and 2024
 
-|                               |     |
-|-------------------------------|-----|
-| ![](outputs/rlie_sa_plot.png) |     |
+|                            |                              |
+|----------------------------|------------------------------|
+| RLIe IUCN RLE methods      | RLIe SA methods              |
+| ![](outputs/rlie_plot.png) | ![](outputs/rliesa_plot.png) |
 
 **Combined RLE and EPL results**
 
 The Quarto document [RLE_EPL_results.qmd](RLE_EPL_results.qmd) describes the combination of the RLE and EPL results and the production of a spatial version of the results attached to river line map.
 
-results per type: [outputs/riv_results_type.csv](outputs/riv_results_type.csv)
+IUCN RLE v2 and EPL results:
 
-simplified results for integration: [outputs/riv_results_for_integration.csv](outputs/riv_results_for_integration.csv)
+Full results per type : [outputs/riv_results_type.csv](outputs/riv_results_type.csv)
 
-unluckies: [outputs/riv_unluckies.csv](outputs/riv_unluckies.csv)
+Simplified results for integration : [outputs/riv_results_for_integration.csv](outputs/riv_results_for_integration.csv)
 
-**Highly threatened and under-protected ecosystems**
+Highly threatened and under protected : [outputs/riv_unluckies.csv](outputs/riv_unluckies.csv)
 
-36% of river types (82/222) are highly threatened (EN/CR) and under protected (NP/ PP), but 50% of Lowland rivers fall into this category.
+Highly threatened and under-protected ecosystems: 36% of river types (82/222) are highly threatened (EN/CR) and under protected (NP/ PP), but 50% of Lowland rivers fall into this category.
+
+SA ETS (van Deventer et al., 2019) and EPL results:
+
+Full results per type : [outputs/riv_results_type_sa.csv](outputs/riv_results_type_sa.csv)
+
+Simplified results for integration : [outputs/riv_results_sa_for_integration.csv](outputs/riv_results_sa_for_integration.csv)
+
+Highly threatened and under protected : [outputs/riv_unluckies_sa.csv](outputs/riv_unluckies_sa.csv)
+
+Highly threatened and under-protected ecosystems: 60% of river types (132/222) are highly threatened (EN/CR) and under protected (NP/ PP), but 65% of Lowland rivers fall into this category.

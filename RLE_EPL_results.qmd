@@ -9,7 +9,8 @@ library(tidyverse)
 ```
 
 ```{r}
-# Load the RLE and EPL results for Estuaries and then combine them and join to estuaries patial data
+# Load RLE and EPL for rivers results 
+
 RLE <- read.csv("C:/Rdata/RLE_riv/outputs/rle_riv_metrics_per_type.csv")
 EPL <- read.csv("C:/Rdata/EPL_riv/outputs/epl_riv_metrics_per_type.csv")
 
@@ -55,9 +56,55 @@ unlucky_wide <- riv_results %>%
 
 
 # write results
-write.csv(riv_results, file = "outputs/riv_results_type.csv")
+write.csv(riv_results_type, file = "outputs/riv_results_type.csv")
 write.csv(riv_results_for_integration, file = "outputs/riv_results_for_integration.csv")
 write.csv(unlucky_wide, file = "outputs/riv_unluckies.csv")
+
+```
+
+Results using SA ETS
+
+```{r}
+
+ETS <- read.csv("C:/Rdata/RLE_riv/outputs/rle_riv_metrics_per_type.csv") %>% select(RIVTYPE, A3sa_18, A3sa_24, tot_leng24) %>%  rename( ETS18 = A3sa_18, ETS24 = A3sa_24, extent = tot_leng24)
+# select only cols required and then join
+riv_results_type_sa <- ETS %>%
+  left_join(EPL, by = "RIVTYPE") %>%
+  # combine RLE and EPL into a new col
+  unite("ETS_EPL24", ETS24, EPL24, sep = "_", remove = FALSE) %>%
+  # order the cols to show unluckies in right sequence
+  mutate(ETS24 = factor(ETS24, levels = c("LC", "VU", "EN", "CR"), ordered = TRUE)) %>%
+  mutate(EPL24 = factor(EPL24, levels = c("NP", "PP", "MP", "WP"), ordered = TRUE)) %>%
+    mutate(ETS_EPL24 = factor(ETS_EPL24, levels = c("LC_WP", "LC_MP", "VU_WP", "VU_MP", "LC_PP",  "LC_NP",  "VU_PP", "VU_NP", "EN_WP", "EN_MP",  "CR_WP", "CR_MP","EN_PP" , "EN_NP","CR_PP", "CR_NP"), ordered = TRUE)) %>%
+  relocate(zone, .after = RIVTYPE) %>%
+  relocate(ETS_EPL24, .after = EPL24)
+
+# MAKE simple output for coastal and overal integrated results and plots 
+riv_results_sa_for_integration <- riv_results_type_sa %>%
+  select(RIVTYPE, zone, extent, ETS24, EPL24, ETS_EPL24) %>%
+  mutate(realm = "riv") %>%
+  rename(type = RIVTYPE, RLE = ETS24, EPL = EPL24, RLE_EPL = ETS_EPL24)
+
+# summarise unluckies 
+unlucky_wide_sa <- riv_results_type_sa %>% 
+  group_by(ETS_EPL24, zone) %>% 
+  summarise(count = n(), .groups = "drop") %>%
+  pivot_wider(names_from = zone, values_from = count, values_fill = 0) %>%# Step 2: 
+  rowwise() %>%
+  mutate(Total = sum(c_across(-ETS_EPL24))) %>%
+  ungroup() %>%
+  bind_rows(
+    summarise(., 
+              ETS_EPL24 = "Total", 
+              across(where(is.numeric), ~sum(.x, na.rm = TRUE)))
+  )
+
+
+
+# write results
+write.csv(riv_results_type_sa, file = "outputs/riv_results_type.csv")
+write.csv(riv_results_sa_for_integration, file = "outputs/riv_results_for_integration.csv")
+write.csv(unlucky_wide_sa, file = "outputs/riv_unluckies.csv")
 
 ```
 
