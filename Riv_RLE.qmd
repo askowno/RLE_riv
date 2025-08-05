@@ -124,9 +124,9 @@ riv_type_24 <- riv %>%
       > 0.01 | (A+B == 0), "decline1824", "nodecline1824"))  %>%
  # Metrics for SA ETS  
    mutate(prp18_ab = (A18+B18)/tot_leng18) %>%
-   mutate(prp18_abc = (A18+B18+C18)/tot_leng18) %>%
+   mutate(prp18_abc = (A18+B18+C18+DDef18)/tot_leng18) %>%
    mutate(prp24_ab = (A+B)/tot_leng24) %>%
-   mutate(prp24_abc = (A+B+C)/tot_leng24) %>%
+   mutate(prp24_abc = (A+B+C+DDef)/tot_leng24) %>%
 # D3 assessment using PES as measure of functional decline due to biotic disruption (and environmental degradation) PES EF ~ 90%-100% severity; DEF ~ 70%-100% severity; CDEF ~ 50%-100% severity
     mutate(D3_18 = case_when(    prp18_ef >= 0.9 ~ "CR", 
                                  prp18_ef >= 0.7 | prp18_def >=0.9 ~ "EN",
