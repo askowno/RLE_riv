@@ -111,48 +111,59 @@ riv_type_24 <- riv %>%
     rename(DDef = `Data defic`) %>%
   left_join(eoo_df, by = "RIVTYPE") %>%
  # Metrics for RLE 
-   mutate(prp18_cdef = (C18 + D18 + E18 + F18  )/(tot_leng18-DDef18))   %>%
+    mutate(prp18_cdef = (C18 + D18 + E18 + F18  )/(tot_leng18-DDef18))   %>%
     mutate(prp18_def = (D18 + E18 + F18 )/(tot_leng18-DDef18)) %>%
     mutate(prp18_ef= (E18 + F18)/(tot_leng18-DDef18)) %>%
     mutate(prp24_cdef = (C + D + E + F )/(tot_leng24-DDef)) %>%
     mutate(prp24_def = (D + E + F )/(tot_leng24-DDef)) %>%
     mutate(prp24_ef = (E + F)/(tot_leng24-DDef)) %>%
- # Ongoing decline =  length of good river (ABC) declines by >1% from t1 to t2
-    mutate(pes_decline1824 = ifelse(
-      (((A18 + B18 + C18  ) - (A + B + C  ))
-      / (A18 + B18 + C18 )) 
-      > 0.01 | (A+B == 0), "decline1824", "nodecline1824"))  %>%
+ # calculate rate of increase in ef def and cdef between t1 and t2 then project to 2040 (for  D2)    
+   mutate(prp40_ef = prp24_ef + ((prp24_ef-prp18_ef)/(2024-2018)*44)) %>% 
+   mutate(prp40_def = prp24_def + ((prp24_def-prp18_def)/(2024-2018)*44)) %>% 
+   mutate(prp40_cdef = prp24_cdef + ((prp24_cdef-prp18_cdef)/(2024-2018)*44)) %>% 
+ # Ongoing decline =  length of poor  river (def) increases from t1 to t2
+    mutate(pes_decline1824 = ifelse(prp24_def > prp18_def, "decline1824", "nodecline1824"))  %>%
  # Metrics for SA ETS  
    mutate(prp18_ab = (A18+B18)/tot_leng18) %>%
    mutate(prp18_abc = (A18+B18+C18+DDef18)/tot_leng18) %>%
    mutate(prp24_ab = (A+B)/tot_leng24) %>%
    mutate(prp24_abc = (A+B+C+DDef)/tot_leng24) %>%
-# D3 assessment using PES as measure of functional decline due to biotic disruption (and environmental degradation) PES EF ~ 90%-100% severity; DEF ~ 70%-100% severity; CDEF ~ 50%-100% severity
-    mutate(D3_18 = case_when(    prp18_ef >= 0.9 ~ "CR", 
+# D1 assessment assuming  impacts in last 50 years - using PES as measure of functional decline due to biotic disruption (and environmental degradation) PES EF ~ 90%-100% severity; DEF ~ 70%-100% severity; CDEF ~ 50%-100% severity
+    mutate(D1_18 = case_when(    prp18_ef >= 0.8 ~ "CR", 
+                                 prp18_ef >= 0.5 | prp18_def >=0.8 ~ "EN",
+                                 prp18_ef >= 0.3 | prp18_def >=0.5 | 
+                                                   prp18_cdef >= 0.8 ~ "VU", 
+                                 TRUE ~ "LC")) %>% 
+    mutate(D1_24 = case_when(    prp24_ef >= 0.8 ~ "CR", 
+                                 prp24_ef >= 0.5 | prp24_def >=0.8 ~ "EN",
+                                 prp24_ef >= 0.3 | prp24_def >=0.5 | 
+                                                   prp24_cdef >= 0.8 ~ "VU", 
+                                 TRUE ~ "LC")) %>%
+    # D3 assessment using PES as measure of functional decline due to biotic disruption (and environmental degradation) PES EF ~ 90%-100% severity; DEF ~ 70%-100% severity; CDEF ~ 50%-100% severity
+      mutate(D3_18 = case_when(    prp18_ef >= 0.9 ~ "CR", 
                                  prp18_ef >= 0.7 | prp18_def >=0.9 ~ "EN",
                                  prp18_ef >= 0.5 | prp18_def >=0.7 | 
                                                    prp18_cdef >= 0.9 ~ "VU", 
                                  TRUE ~ "LC")) %>% 
-    mutate(D3_24 = case_when(    prp24_ef >= 0.9 ~ "CR", 
+     mutate(D3_24 = case_when(    prp24_ef >= 0.9 ~ "CR", 
                                  prp24_ef >= 0.7 | prp24_def >=0.9 ~ "EN",
                                  prp24_ef >= 0.5 | prp24_def >=0.7 | 
                                                    prp24_cdef >= 0.9 ~ "VU", 
                                  TRUE ~ "LC")) %>%
-# B1aii assessment  using declining PES trend as evidence of ongoing decline (note decline from 2018 to 2024 is used as evidence of ongoing decline for 2018 and 2014 assessments - PES for 2014 is incomplete so this cannot be used in same way as PES18 and PES24)
+    # B1aii assessment  using declining PES trend as evidence of ongoing decline (note decline from 2018 to 2024 is used as evidence of ongoing decline for 2018 and 2014 assessments - PES for 2014 is incomplete so this cannot be used in same way as PES18 and PES24)
    mutate(B1_24 = case_when( pes_decline1824 == "decline1824" & eoo_km2  <= 2000 ~ "CR",
                              pes_decline1824 == "decline1824" & eoo_km2  <= 20000 ~ "EN",
                              pes_decline1824 == "decline1824" & eoo_km2  <= 50000 ~ "VU",
                                  TRUE ~ "LC")) %>%
    mutate(B1_18 = B1_24) %>%
+ # make all assessments factors to get MAX 
+    mutate(across( c(B1_18, B1_24, D1_18, D1_24, D3_18, D3_24), 
+                   ~ factor(., levels = c("LC", "VU", "EN", "CR"), ordered = TRUE)  ))  %>%
  # Ensure highest risk cateroy is assiged 
-   mutate(RLE_18 = case_when(B1_18 == "CR" | D3_18 == "CR" ~ "CR", 
-                             B1_18 == "EN" | D3_18 == "EN" ~ "EN",
-                             B1_18 == "VU" | D3_18 == "VU" ~ "VU",
-                              TRUE ~ "LC")) %>%
-   mutate(RLE_24 = case_when(B1_24 == "CR" | D3_24 == "CR" ~ "CR", 
-                             B1_24 == "EN" | D3_24 == "EN" ~ "EN",
-                             B1_24 == "VU" | D3_24 == "VU" ~ "VU",
-                              TRUE ~ "LC")) %>%
+   rowwise() %>%
+     mutate(RLE_18 = max(c_across(c(B1_18, D1_18, D3_18)), na.rm = TRUE), 
+            RLE_24 = max(c_across(c(B1_24, D1_24, D3_24)), na.rm = TRUE)) %>%
+   ungroup() %>%
 # Add van Deventer 2018 ETS method: assuming A and B are intact rest is lost but also counting C towards VU (use DDfec as PES C)
     mutate(A3sa_24 = case_when( prp24_ab < 0.2 ~ "CR", 
                                 prp24_ab < 0.35 ~ "EN",
@@ -168,6 +179,7 @@ riv_type_24 <- riv %>%
                            str_ends(RIVTYPE, "F") ~ "Lowland river", 
                            str_ends(RIVTYPE, "M") ~ "Mountain stream", 
                            TRUE ~  "other")) 
+ 
    # export a csv of results - Condition and EPL per river type 2018 and 2024
    write.csv(riv_type_metrics, file = "outputs/rle_riv_metrics_per_type.csv")
    

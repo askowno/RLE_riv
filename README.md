@@ -31,7 +31,7 @@ Summary table - count of river ecosystem types per slope zone per South African 
 | ![](outputs/rle24_riv_barplot_count.jpeg) | ![](outputs/rle24_riv_barplot_ext.jpeg) |
 
 | ETS (SA method) - Count of types per category | ETS (SA method) - Extent of types per category |
-|----|----|
+|------------------------------------|------------------------------------|
 | ![](outputs/rle24sa_riv_barplot_count.jpeg) | ![](outputs/rle24sa_riv_barplot_ext.jpeg) |
 
 **RLE Index**
@@ -55,7 +55,7 @@ Simplified results for integration : [outputs/riv_results_for_integration.csv](o
 
 Highly threatened and under protected : [outputs/riv_unluckies.csv](outputs/riv_unluckies.csv)
 
-Highly threatened and under-protected ecosystems: 36% of river types (82/222) are highly threatened (EN/CR) and under protected (NP/ PP), but 50% of Lowland rivers fall into this category.
+Highly threatened and under-protected ecosystems: 41% of river types (92/222) are highly threatened (EN/CR) and under protected (NP/ PP), but 50% of Lowland rivers fall into this category.
 
 SA ETS (van Deventer et al., 2019) and EPL results:
 
