@@ -102,9 +102,9 @@ unlucky_wide_sa <- riv_results_type_sa %>%
 
 
 # write results
-write.csv(riv_results_type_sa, file = "outputs/riv_results_type.csv")
-write.csv(riv_results_sa_for_integration, file = "outputs/riv_results_for_integration.csv")
-write.csv(unlucky_wide_sa, file = "outputs/riv_unluckies.csv")
+write.csv(riv_results_type_sa, file = "outputs/riv_results_type_sa.csv")
+write.csv(riv_results_sa_for_integration, file = "outputs/riv_results_sa_for_integration.csv")
+write.csv(unlucky_wide_sa, file = "outputs/riv_unluckies_sa.csv")
 
 ```
 
