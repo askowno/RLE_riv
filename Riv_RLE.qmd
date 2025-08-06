@@ -81,7 +81,6 @@ write.csv(eoo_df, "outputs/EOO_all.csv")
 RLE and ETS assessment of river ecosystem types
 
 ```{r}
-
 #summarise by River type including segment length per type per condition class - this allows for inclusion of condition in the EPL formula
 options(scipen = 999)
 
@@ -101,6 +100,15 @@ riv_type_24 <- riv %>%
   mutate(tot_leng24 = rowSums(across(c(A, B, C, D, E, F, `Data defic`)))) %>%
   mutate(prcDDef24 = `Data defic`/(A+B+C+D+E+F+`Data defic`))
 
+# PES results 24 for booklet narratives
+pes24_stats <- riv_type_24 %>%
+    bind_rows(summarise(., RIVTYPE = "Total", across(where(is.numeric), ~sum(., na.rm = TRUE)) ) ) %>%
+  mutate(prp24_ab = (A+B)/tot_leng24)
+
+  write.csv(pes24_stats, file = "outputs/riv_pes24_per_type.csv")
+```
+
+```{r}
 
 # Join the tables above - this makes a single table in which all the required metric can be found to compute EPL and RLE
  
