@@ -100,7 +100,35 @@ riv_type_24 <- riv %>%
   mutate(tot_leng24 = rowSums(across(c(A, B, C, D, E, F, `Data defic`)))) %>%
   mutate(prcDDef24 = `Data defic`/(A+B+C+D+E+F+`Data defic`))
 
-# PES results 24 for booklet narratives
+# average condition estimates - this is an adjusted per type leng reflecting condition
+riv_scores <- riv %>%
+  mutate(cond24 = case_when(PES2024 == "A" ~ 0.9, 
+                            PES2024 == "B" ~ 0.8,
+                            PES2024 == "C" ~ 0.5,
+                            PES2024 == "D" ~ 0.3,
+                            PES2024 == "E" ~ 0.1,
+                            PES2024 == "F" ~ 0.05,
+                            TRUE ~ 100),
+         cond18 = case_when(PES2018 == "A" ~ 0.9, 
+                            PES2018 == "B" ~ 0.8,
+                            PES2018 == "C" ~ 0.5,
+                            PES2018 == "D" ~ 0.3,
+                            PES2018 == "E" ~ 0.1,
+                            PES2018 == "F" ~ 0.05,
+                            TRUE ~ 100)) %>% 
+    group_by(RIVTYPE) %>%
+    summarise(score24 = sum(cond24 * leng, na.rm = TRUE), 
+              score18 = sum(cond18 * leng, na.rm = TRUE)) %>%
+  ungroup() %>%
+  left_join(riv_type_24, by  = "RIVTYPE") %>% 
+  mutate(
+  condindex24 = pmin(pmax(score24 / tot_leng24, 0), 1),
+  condindex18 = pmin(pmax(score18 / tot_leng24, 0), 1)
+) %>%
+select(RIVTYPE, condindex24, condindex18)
+
+
+ # PES results 24 for booklet narratives
 pes24_stats <- riv_type_24 %>%
     bind_rows(summarise(., RIVTYPE = "Total", across(where(is.numeric), ~sum(., na.rm = TRUE)) ) ) %>%
   mutate(prp24_ab = (A+B)/tot_leng24)
@@ -118,17 +146,17 @@ pes24_stats <- riv_type_24 %>%
    left_join(riv_type_24, by = "RIVTYPE") %>%
     rename(DDef = `Data defic`) %>%
   left_join(eoo_df, by = "RIVTYPE") %>%
+     left_join(riv_scores, by = "RIVTYPE") %>%
  # Metrics for RLE 
-    mutate(prp18_cdef = (C18 + D18 + E18 + F18  )/(tot_leng18-DDef18))   %>%
+ # Calculate rate of decline in PES scores over a 50 year period 2018 to 2068    
+  mutate(condindex68 = pmin(pmax(condindex24 - ((condindex18 - condindex24) / (2024 - 2018) * 44), 0), 1)) %>%
+  mutate(cond_decline = pmin(pmax((condindex24 - condindex68) / condindex24, 0), 1)) %>%
+  mutate(prp18_cdef = (C18 + D18 + E18 + F18  )/(tot_leng18-DDef18))   %>%
     mutate(prp18_def = (D18 + E18 + F18 )/(tot_leng18-DDef18)) %>%
     mutate(prp18_ef= (E18 + F18)/(tot_leng18-DDef18)) %>%
     mutate(prp24_cdef = (C + D + E + F )/(tot_leng24-DDef)) %>%
     mutate(prp24_def = (D + E + F )/(tot_leng24-DDef)) %>%
     mutate(prp24_ef = (E + F)/(tot_leng24-DDef)) %>%
- # calculate rate of increase in ef def and cdef between t1 and t2 then project to 2040 (for  D2)    
-   mutate(prp40_ef = prp24_ef + ((prp24_ef-prp18_ef)/(2024-2018)*44)) %>% 
-   mutate(prp40_def = prp24_def + ((prp24_def-prp18_def)/(2024-2018)*44)) %>% 
-   mutate(prp40_cdef = prp24_cdef + ((prp24_cdef-prp18_cdef)/(2024-2018)*44)) %>% 
  # Ongoing decline =  length of poor  river (def) increases from t1 to t2
     mutate(pes_decline1824 = ifelse(prp24_def > prp18_def, "decline1824", "nodecline1824"))  %>%
  # Metrics for SA ETS  
@@ -147,13 +175,19 @@ pes24_stats <- riv_type_24 %>%
                                  prp24_ef >= 0.3 | prp24_def >=0.5 | 
                                                    prp24_cdef >= 0.8 ~ "VU", 
                                  TRUE ~ "LC")) %>%
+ #D2b decline in PES  over 50 year period 
+    mutate(D2_24 = case_when(    cond_decline >= 0.8 ~ "CR", 
+                                 cond_decline >= 0.5 ~ "EN",
+                                 cond_decline >= 0.3 ~ "VU", 
+                                 TRUE ~ "LC")) %>%
+   mutate(D2_18 = D2_24) %>% # PES 2014 unreliable to cannot be used to get rate - assumed to be same
     # D3 assessment using PES as measure of functional decline due to biotic disruption (and environmental degradation) PES EF ~ 90%-100% severity; DEF ~ 70%-100% severity; CDEF ~ 50%-100% severity
-      mutate(D3_18 = case_when(    prp18_ef >= 0.9 ~ "CR", 
+      mutate(D3_18 = case_when(  prp18_ef >= 0.9 ~ "CR", 
                                  prp18_ef >= 0.7 | prp18_def >=0.9 ~ "EN",
                                  prp18_ef >= 0.5 | prp18_def >=0.7 | 
                                                    prp18_cdef >= 0.9 ~ "VU", 
                                  TRUE ~ "LC")) %>% 
-     mutate(D3_24 = case_when(    prp24_ef >= 0.9 ~ "CR", 
+     mutate(D3_24 = case_when(   prp24_ef >= 0.9 ~ "CR", 
                                  prp24_ef >= 0.7 | prp24_def >=0.9 ~ "EN",
                                  prp24_ef >= 0.5 | prp24_def >=0.7 | 
                                                    prp24_cdef >= 0.9 ~ "VU", 
@@ -165,12 +199,12 @@ pes24_stats <- riv_type_24 %>%
                                  TRUE ~ "LC")) %>%
    mutate(B1_18 = B1_24) %>%
  # make all assessments factors to get MAX 
-    mutate(across( c(B1_18, B1_24, D1_18, D1_24, D3_18, D3_24), 
+    mutate(across( c(B1_18, B1_24, D1_18, D1_24, D2_18, D2_24, D3_18, D3_24), 
                    ~ factor(., levels = c("LC", "VU", "EN", "CR"), ordered = TRUE)  ))  %>%
  # Ensure highest risk cateroy is assiged 
    rowwise() %>%
-     mutate(RLE_18 = max(c_across(c(B1_18, D1_18, D3_18)), na.rm = TRUE), 
-            RLE_24 = max(c_across(c(B1_24, D1_24, D3_24)), na.rm = TRUE)) %>%
+     mutate(RLE_18 = max(c_across(c(B1_18, D1_18, D2_18, D3_18)), na.rm = TRUE), 
+            RLE_24 = max(c_across(c(B1_24, D1_24, D2_24, D3_24)), na.rm = TRUE)) %>%
    ungroup() %>%
 # Add van Deventer 2018 ETS method: assuming A and B are intact rest is lost but also counting C towards VU (use DDfec as PES C)
     mutate(A3sa_24 = case_when( prp24_ab < 0.2 ~ "CR", 
