@@ -65,7 +65,7 @@ Simplified results for integration : [outputs/riv_results_for_integration.csv](o
 
 Highly threatened and under protected : [outputs/riv_unluckies.csv](outputs/riv_unluckies.csv)
 
-Highly threatened and under-protected ecosystems: 41% of river types (92/222) are highly threatened (EN/CR) and under protected (NP/ PP), but 50% of Lowland rivers fall into this category.
+Highly threatened and under-protected ecosystems: 36% of river types (82/222) are highly threatened (EN/CR) and under protected (NP/ PP), but 50% of Lowland rivers fall into this category.
 
 SA ETS (van Deventer et al., 2019) and EPL results:
 
