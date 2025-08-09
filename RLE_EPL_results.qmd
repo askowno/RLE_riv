@@ -6,6 +6,7 @@ format: html
 ```{r}
 library(sf)
 library(tidyverse)
+
 ```
 
 ```{r}
@@ -109,22 +110,25 @@ write.csv(unlucky_wide_sa, file = "outputs/riv_unluckies_sa.csv")
 ```
 
 ```{r}
-# # Prepare to output spatial data with combined RLE and EPL results 
-# 
-# # Add and clean up spatial data
-# riv_v <-st_read("C:/Users/skownoa/Dropbox/NBAwork/Rivers/NBA2025_rivers/NBA2025_River_20250610.shp") #ensure it uses proj =  wgs84 aea cm 25 -24 -33
-# riv_v <- riv_v %>%
-#   mutate(leng = as.numeric(st_length(geometry))) %>%
-#   rename(PES2024 = NBA2025_PE) %>% # fix name of PES 2024
-#   # clean up non SA type and remove estuaries and foreign segments
-#   filter(RIVTYPE != "Foreign", PES2018 != "Foreign", PES2024 != "Foreign",
-#                      PES2018 != "Estuary",  PES2018 != "Estuary") %>%   
-#     # convert Na in PES 2014 to DDef
-#   mutate(PES2014 = ifelse(is.na(PES2014), "Data defic", PES2014))
-# 
-# riv_results_vector <- riv_v %>%
-#   left_join(riv_results, by = "RIVTYPE") %>%
-#   relocate(zone, .after = RIVTYPE)
-#  
-# st_write(riv_results_vector, "C:/Users/skownoa/Dropbox/NBAwork/Rivers/riv_results_vector.gpkg") 
+# Prepare to output spatial data with combined RLE and EPL results
+
+# Add and clean up spatial data
+riv_v <-st_read("C:/Users/skownoa/Dropbox/NBAwork/Rivers/NBA2025_rivers/NBA2025_River_20250610.shp") #ensure it uses proj =  wgs84 aea cm 25 -24 -33
+riv_v <- riv_v %>%
+  mutate(leng = as.numeric(st_length(geometry))) %>%
+  rename(PES2024 = NBA2025_PE) %>% # fix name of PES 2024
+  # clean up non SA type and remove estuaries and foreign segments
+  filter(RIVTYPE != "Foreign", PES2018 != "Foreign", PES2024 != "Foreign",
+                     PES2018 != "Estuary",  PES2018 != "Estuary") %>%
+    # convert Na in PES 2014 to DDef
+  mutate(PES2014 = ifelse(is.na(PES2014), "Data defic", PES2014))
+
+riv_results_vector <- riv_v %>%
+  left_join(riv_results_for_integration, by = c( "RIVTYPE"= "type") )
+
+st_write(
+  riv_results_vector,
+  "C:/Users/skownoa/Dropbox/NBAwork/Rivers/riv_results_vector.gpkg",
+  delete_dsn = TRUE
+)
 ```
