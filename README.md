@@ -37,11 +37,11 @@ Summary table - count of river ecosystem types per slope zone per IUCN RLE categ
 Summary table - count of river ecosystem types per slope zone per South African ETS category [rle24sa_riv_count.csv](outputs/rle24sa_riv_count.csv)
 
 | RLE 2024 - Count of types per category | RLE 2024 - Extent of types per category |
-|------------------------------------|------------------------------------|
+|----|----|
 | ![](outputs/rle24_riv_barplot_count.jpeg) | ![](outputs/rle24_riv_barplot_ext.jpeg) |
 
 | ETS (SA method) - Count of types per category | ETS (SA method) - Extent of types per category |
-|------------------------------------|------------------------------------|
+|----|----|
 | ![](outputs/rle24sa_riv_barplot_count.jpeg) | ![](outputs/rle24sa_riv_barplot_ext.jpeg) |
 
 **RLE Index**
