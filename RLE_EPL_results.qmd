@@ -131,4 +131,12 @@ st_write(
   "C:/Users/skownoa/Dropbox/NBAwork/Rivers/riv_results_vector.gpkg",
   delete_dsn = TRUE
 )
+
+# make one I can open in ARCGIS - must move to unprojected (WKT conflict r to ARC)
+st_write(
+  st_transform(riv_results_vector, crs = 4326), 
+  "C:/Users/skownoa/Dropbox/NBAwork/Rivers/riv_results_vector_dd.gpkg",
+  delete_dsn = TRUE
+)
+
 ```
