@@ -37,11 +37,11 @@ Summary table - count of river ecosystem types per slope zone per IUCN RLE categ
 Summary table - count of river ecosystem types per slope zone per South African ETS category [rle24sa_riv_count.csv](outputs/rle24sa_riv_count.csv)
 
 | RLE 2024 - Count of types per category | RLE 2024 - Extent of types per category |
-|----|----|
+|------------------------------------|------------------------------------|
 | ![](outputs/rle24_riv_barplot_count.jpeg) | ![](outputs/rle24_riv_barplot_ext.jpeg) |
 
 | ETS (SA method) - Count of types per category | ETS (SA method) - Extent of types per category |
-|----|----|
+|------------------------------------|------------------------------------|
 | ![](outputs/rle24sa_riv_barplot_count.jpeg) | ![](outputs/rle24sa_riv_barplot_ext.jpeg) |
 
 **RLE Index**
@@ -63,19 +63,21 @@ Full results per type : [outputs/riv_results_type.csv](outputs/riv_results_type.
 
 Simplified results for integration : [outputs/riv_results_for_integration.csv](outputs/riv_results_for_integration.csv)
 
-Highly threatened and under protected : [outputs/riv_unluckies.csv](outputs/riv_unluckies.csv)
+**Highly threatened and under protected** :
 
-Highly threatened and under-protected ecosystems: 36% of river types (82/222) are highly threatened (EN/CR) and under protected (NP/ PP), but 50% of Lowland rivers fall into this category.
+Highly threatened and under-protected ecosystems: 36% of river types (82/222) are highly threatened (EN/CR) and under protected (NP/ PP), but 50% of Lowland rivers fall into this category. [outputs/riv_unluckies.csv](outputs/riv_unluckies.csv)
 
-SA ETS (van Deventer et al., 2019) and EPL results:
+**Threat Status**
 
-Full results per type : [outputs/riv_results_type_sa.csv](outputs/riv_results_type_sa.csv)
+Count : 60% (134/222) are threatened; 47% (104/222) are CR or EN
 
-Simplified results for integration : [outputs/riv_results_sa_for_integration.csv](outputs/riv_results_sa_for_integration.csv)
+Extent : 39% threatened; 33% CR EN
 
-Highly threatened and under protected : [outputs/riv_unluckies_sa.csv](outputs/riv_unluckies_sa.csv)
+**EPL**
 
-Highly threatened and under-protected ecosystems: 60% of river types (132/222) are highly threatened (EN/CR) and under protected (NP/ PP), but 65% of Lowland rivers fall into this category.
+Count : 79% (176/222) are PP orNP, while 31% (69/222) are NP at all
+
+Extent : 91% is PP or NP while 34% is NP
 
 **River PES stats for 2024**
 
